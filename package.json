@@ -1,7 +1,7 @@
 {
   "name": "frontendtemplate",
   "version": "1.0.0",
-  "description": "frontend template",
+  "description": "frontend template for a fast start",
   "main": "index.js",
   "scripts": {
       "webpack": "webpack"
@@ -9,7 +9,11 @@
   "engines": {
     "node": "6.2.1",
     "npm": "3.9.3"
-  },  
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/edward8628/frontendtemplate.git"
+  },
   "author": "feng",
   "license": "ISC",
   "devDependencies": {

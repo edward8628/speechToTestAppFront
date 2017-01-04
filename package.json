@@ -4,7 +4,8 @@
   "description": "frontend template for a fast start",
   "main": "index.js",
   "scripts": {
-      "webpack": "webpack"
+    "start": "./node_modules/babel-cli/bin/babel-node.js src/index.js",
+    "webpack": "webpack"
   },
   "engines": {
     "node": "6.2.1",
@@ -17,13 +18,22 @@
   "author": "feng",
   "license": "ISC",
   "devDependencies": {
+    "babel-cli": "^6.18.0",
     "babel-core": "^6.21.0",
     "babel-loader": "^6.2.10",
     "babel-preset-es2015": "^6.18.0",
     "babel-preset-react": "^6.16.0",
+    "babel-preset-stage-0": "^6.16.0",
     "react": "^15.4.1",
     "react-dom": "^15.4.1",
     "webpack": "^1.14.0",
     "webpack-dev-server": "^1.16.2"
+  },
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "debug": "^2.6.0",
+    "dotenv": "^2.0.0",
+    "express": "^4.14.0",
+    "path": "^0.12.7"
   }
 }

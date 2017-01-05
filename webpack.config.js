@@ -1,16 +1,20 @@
-var path = require('path');
-var webpack = require('webpack');
+import webpack from 'webpack';
+import path from 'path';
+import ExtractTextPlugin from "extract-text-webpack-plugin";
      
 module.exports = {
-  devtool: 'eval-source-map',
+  debug: true,
+  devtool: '#eval-source-map',
   context: path.join(__dirname, 'src'),
-  
+
   entry: [
-    './js/app'
+    'webpack/hot/dev-server',
+    'webpack-hot-middleware/client',
+    './app.js'
   ],
   
   output: {
-    path: path.resolve(__dirname, 'build'),
+    path: path.join(__dirname, 'src', 'assets', 'js'),
     filename: 'bundle.js'
   },
   
@@ -18,17 +22,17 @@ module.exports = {
     new webpack.optimize.OccurenceOrderPlugin(),
     new webpack.HotModuleReplacementPlugin(),
     new webpack.NoErrorsPlugin(),
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify('development')
+    new ExtractTextPlugin('main.css', {
+      allChunks: true
     })
   ],
   
   module: {
     loaders: [
-      {test: /\.jsx?$/, exclude: /node_modules/, loaders: ['react-hot', 'babel'] },
-      {test: /\.json?$/, loader: 'json'},
-      {test: /\.scss$/, loader: 'style!css!sass?modules&localIdentName=[name]---[local]---[hash:base64:5]'},
-      {test: /.(png|woff(2)?|eot|ttf|svg)(\?[a-z0-9=\.]+)?$/, loader: 'url-loader?limit=100000' }
+      { test: /\.jsx?$/, exclude: /node_modules/, loaders: ['react-hot', 'babel'] },
+      { test: /\.json$/, loader: 'json' },
+      { test: /\.scss$/, loader: ExtractTextPlugin.extract('style-loader', 'css-loader!sass-loader') },
+      { test: /.(png|woff(2)?|eot|ttf|svg)(\?[a-z0-9=\.]+)?$/, loader: 'url-loader?limit=100000' }
     ]
   }
 };

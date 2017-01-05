@@ -7,18 +7,31 @@ import path                     from 'path';
 import { match, RouterContext } from 'react-router';
 import React                    from 'react';
 import { renderToString }       from 'react-dom/server';
+import webpackConfig            from '../webpack.config.js';
+
+import routes                   from './routes/routes.js';
 
 const debug = require('debug')(`${process.env.APPNAME}:index`);
 const app = express();
 const host = process.env.HOST || 'localhost';
 const port = process.env.PORT || 3000;
 
+const ignore = (req, res, next) => {
+  if (req.url.match(/^\/(assets|browser-sync)\/.+$/) || req.url === '/favicon.ico') { //ignore static files
+    res.end();
+  } else {
+    next();
+  }
+}
+
 app.set('view engine', 'html');
 app.set('views', __dirname);
 
 app.use(bodyParser.json());
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Origin", req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
 });
@@ -28,14 +41,11 @@ app.get("/health", (req, res) => {
   res.status(200).send({success: "frontend template is up"});
 });
 
+debug('NODE_ENV', app.get('env'));
 if (app.get('env') == 'development') {
-  // comment out to stop unexpected click events!!
-  // const browserSync              = require('browser-sync');
-  // const historyApiFallback       = require('connect-history-api-fallback');
   const webpack                  = require('webpack');
   const webpackDevMiddleware     = require('webpack-dev-middleware');
   const webpackHotMiddleware     = require('webpack-hot-middleware');
-  const webpackConfig = require('../webpack.config');
   const bundler = webpack(webpackConfig);
 
   const middleware = webpackDevMiddleware(bundler, {
@@ -48,15 +58,14 @@ if (app.get('env') == 'development') {
     // for other settings see
     // http://webpack.github.io/docs/webpack-dev-middleware.html
   });
-  
+
   app.use(middleware);
   app.use(webpackHotMiddleware(bundler));
-  // app.use(historyApiFallback());
 } else {
   app.use("/", express.static(path.join(__dirname, '../build')));
 }
 
-app.get( '*', (req, res) => {
+app.get( '*', ignore, (req, res) => {
   // Note that req.url here should be the full URL path from
   // the original request, including the query string.
   match({ routes, location: req.url }, (error, redirectLocation, renderProps) => {

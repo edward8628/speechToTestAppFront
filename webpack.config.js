@@ -3,11 +3,11 @@ var webpack = require('webpack');
      
 module.exports = {
   devtool: 'eval-source-map',
-  stats: {
-    colors: true
-  },
+  context: path.join(__dirname, 'src'),
   
-  entry: './src/js/app.js',
+  entry: [
+    './js/app'
+  ],
   
   output: {
     path: path.resolve(__dirname, 'build'),
@@ -25,11 +25,10 @@ module.exports = {
   
   module: {
     loaders: [
-      {test: /\.js?$/, exclude: /node_modules/, loader: 'babel'}, 
+      {test: /\.jsx?$/, exclude: /node_modules/, loaders: ['react-hot', 'babel'] },
       {test: /\.json?$/, loader: 'json'},
       {test: /\.scss$/, loader: 'style!css!sass?modules&localIdentName=[name]---[local]---[hash:base64:5]'},
-      {test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "url-loader?limit=10000&minetype=application/font-woff" },
-      {test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "file-loader" }
+      {test: /.(png|woff(2)?|eot|ttf|svg)(\?[a-z0-9=\.]+)?$/, loader: 'url-loader?limit=100000' }
     ]
   }
 };

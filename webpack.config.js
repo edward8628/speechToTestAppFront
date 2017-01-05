@@ -1,7 +1,7 @@
-import webpack from 'webpack';
-import path from 'path';
-import ExtractTextPlugin from "extract-text-webpack-plugin";
-     
+var webpack = require('webpack');
+var path = require('path');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
+
 module.exports = {
   debug: true,
   devtool: '#eval-source-map',
@@ -14,7 +14,7 @@ module.exports = {
   ],
   
   output: {
-    path: path.join(__dirname, 'src', 'assets', 'js'),
+    path: path.join(__dirname, 'build'),
     filename: 'bundle.js'
   },
   

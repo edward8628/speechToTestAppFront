@@ -24,7 +24,7 @@ const ignore = (req, res, next) => {
   }
 }
 
-app.set('view engine', 'html');
+app.set('view engine', 'ejs');
 app.set('views', __dirname);
 
 app.use(bodyParser.json());
@@ -47,14 +47,11 @@ if (app.get('env') == 'development') {
   const webpackDevMiddleware     = require('webpack-dev-middleware');
   const webpackHotMiddleware     = require('webpack-hot-middleware');
   const bundler = webpack(webpackConfig);
-
   const middleware = webpackDevMiddleware(bundler, {
     // IMPORTANT: dev middleware can't access config, so we should
-    // provide publicPath by ourselves
     publicPath: webpackConfig.output.publicPath,
-    // pretty colored output
-    stats: { colors: true }
-
+    stats: { colors: true },
+    noInfo: true,
     // for other settings see
     // http://webpack.github.io/docs/webpack-dev-middleware.html
   });
@@ -77,7 +74,9 @@ app.get( '*', ignore, (req, res) => {
       // You can also check renderProps.components or renderProps.routes for
       // your "not found" component or route respectively, and send a 404 as
       // below, if you're using a catch-all route.
-      res.status(200).send(renderToString(<RouterContext {...renderProps} />))
+      res.status(200).render('index', {
+        root: renderToString(<RouterContext {...renderProps} />)
+      })
     } else {
       res.status(404).send('Not found')
     }

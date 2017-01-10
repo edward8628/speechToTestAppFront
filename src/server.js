@@ -14,7 +14,7 @@ import routes                   from './routes/routes.js';
 const debug = require('debug')(`${process.env.APPNAME}:index`);
 const app = express();
 const host = process.env.HOST || 'localhost';
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 const ignore = (req, res, next) => {
   if (req.url.match(/^\/(assets|browser-sync)\/.+$/) || req.url === '/favicon.ico') { //ignore static files

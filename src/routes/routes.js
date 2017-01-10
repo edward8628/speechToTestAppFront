@@ -1,10 +1,10 @@
 import React from 'react';
 import { Route, IndexRedirect } from 'react-router';
 
-import User from './Users/User.js';
+import Home from './Home/Home.js';
 
 const Routes = (
-  <Route path="/" component={User} >
+  <Route path="/" component={Home} >
   </Route>
 );
 

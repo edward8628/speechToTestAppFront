@@ -8,64 +8,13 @@ class User extends React.Component {
     }
   }
   
-  convertFloat32ToInt16 = (buffer) => {
-    var l = buffer.length;
-    var buf = new Int16Array(l)
-
-    while (l--) {
-      buf[l] = buffer[l]*0xFFFF;    //convert to 16 bit
-    }
-    return buf.buffer
+  closeMicrophone = () => {
+    
   }
-  
-
-  convertToWav = () => {
-    // we flat the left and right channels down
-    var leftBuffer = mergeBuffers ( leftchannel, recordingLength );
-    var rightBuffer = mergeBuffers ( rightchannel, recordingLength );
-    // we interleave both channels together
-    var interleaved = interleave ( leftBuffer, rightBuffer );
-
-    // create the buffer and view to create the .WAV file
-    var buffer = new ArrayBuffer(44 + interleaved.length * 2);
-    var view = new DataView(buffer);
-
-    // write the WAV container, check spec at: https://ccrma.stanford.edu/courses/422/projects/WaveFormat/
-    // RIFF chunk descriptor
-    writeUTFBytes(view, 0, 'RIFF');
-    view.setUint32(4, 44 + interleaved.length * 2, true);
-    writeUTFBytes(view, 8, 'WAVE');
-    // FMT sub-chunk
-    writeUTFBytes(view, 12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    // stereo (2 channels)
-    view.setUint16(22, 2, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 4, true);
-    view.setUint16(32, 4, true);
-    view.setUint16(34, 16, true);
-    // data sub-chunk
-    writeUTFBytes(view, 36, 'data');
-    view.setUint32(40, interleaved.length * 2, true);
-
-    // write the PCM samples
-    var lng = interleaved.length;
-    var index = 44;
-    var volume = 1;
-    for (var i = 0; i < lng; i++){
-      view.setInt16(index, interleaved[i] * (0x7FFF * volume), true);
-      index += 2;
-    }
-
-    // our final binary blob that we can hand off
-    var blob = new Blob ( [ view ], { type : 'audio/wav' } );
-}
-
 
   openMicrophone = () => {
     navigator.mediaDevices.getUserMedia({ audio: true})
-    .then(function(stream) {
+    .then((stream) => {
       var context = new AudioContext();
       var audio = context.createMediaStreamSource(stream);
       // var recLength = 0,
@@ -77,12 +26,11 @@ class User extends React.Component {
       var recorder = context.createScriptProcessor(bufferSize, 1, 1);
       
       // specify the processing function
-      recorder.onaudioprocess = function(e){
-        console.log ('recording');
+      recorder.onaudioprocess = (e) => {
         var left = e.inputBuffer.getChannelData(0);
-        left = new Float32Array (left);
-        console.log(left);
-        // window.Stream.write(this.convertFloat32ToInt16(left));
+        // this.saveData(new Float32Array(left));
+        // this.onAudio(this.exportDataBufferTo16Khz(new Float32Array(left)));
+        console.log(this.exportDataBufferTo16Khz(new Float32Array(left)));
       }
       
       // connect stream to our recorder
@@ -91,12 +39,73 @@ class User extends React.Component {
       recorder.connect(context.destination);
     })
   }
+
+  exportDataBufferTo16Khz = (bufferNewSamples) => {
+    var buffer = null,
+      newSamples = bufferNewSamples.length,
+      unusedSamples = new Float32Array(0),
+      audioContextSampleRate = 44100;
+      
+    if (unusedSamples > 0) {
+      buffer = new Float32Array(unusedSamples + newSamples);
+      for (var i = 0; i < unusedSamples; ++i) {
+        buffer[i] = this.bufferUnusedSamples[i];
+      }
+      for (i = 0; i < newSamples; ++i) {
+        buffer[unusedSamples + i] = bufferNewSamples[i];
+      }
+    } else {
+      buffer = bufferNewSamples;
+    }
+
+    // downsampling variables
+    var filter = [
+        -0.037935, -0.00089024, 0.040173, 0.019989, 0.0047792, -0.058675, -0.056487,
+        -0.0040653, 0.14527, 0.26927, 0.33913, 0.26927, 0.14527, -0.0040653, -0.056487,
+        -0.058675, 0.0047792, 0.019989, 0.040173, -0.00089024, -0.037935
+      ],
+      samplingRateRatio = audioContextSampleRate / 16000,
+      nOutputSamples = Math.floor((buffer.length - filter.length) / (samplingRateRatio)) + 1,
+      pcmEncodedBuffer16k = new ArrayBuffer(nOutputSamples * 2),
+      dataView16k = new DataView(pcmEncodedBuffer16k),
+      index = 0,
+      volume = 0x7FFF, // range from 0 to 0x7FFF to control the volume
+      nOut = 0;
+
+    // eslint-disable-next-line no-redeclare
+    for (var i = 0; i + filter.length - 1 < buffer.length; i = Math.round(samplingRateRatio * nOut)) {
+      var sample = 0;
+      for (var j = 0; j < filter.length; ++j) {
+        sample += buffer[i + j] * filter[j];
+      }
+      sample *= volume;
+      dataView16k.setInt16(index, sample, true); // 'true' -> means little endian
+      index += 2;
+      nOut++;
+    }
+
+    var indexSampleAfterLastUsed = Math.round(samplingRateRatio * nOut);
+    var remaining = buffer.length - indexSampleAfterLastUsed;
+    if (remaining > 0) {
+      this.bufferUnusedSamples = new Float32Array(remaining);
+      for (i = 0; i < remaining; ++i) {
+        this.bufferUnusedSamples[i] = buffer[indexSampleAfterLastUsed + i];
+      }
+    } else {
+      this.bufferUnusedSamples = new Float32Array(0);
+    }
+
+    return new Blob([dataView16k], {
+      type: 'audio/l16'
+    });
+  }
   
   render() {
     return (
       <div>
         <h2>Frontend App</h2>
-        <button onClick={this.openMicrophone}>Microphone</button>
+        <button onClick={this.openMicrophone}>Open Microphone</button>
+        <button onClick={this.closeMicrophone}>Close Microphone</button>
       </div>
     )
   }

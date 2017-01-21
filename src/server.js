@@ -37,9 +37,37 @@ app.use((req, res, next) => {
   next();
 });
 
+var authorization = watson.authorization({
+  username: process.env.USERNAME,
+  password: process.env.PASSWORD,
+  version: 'v1',
+  url: 'https://stream.watsonplatform.net/authorization/api'
+});
+
+const getToken = (req, res, next) => {
+  var params = {
+    url: 'https://stream.watsonplatform.net/speech-to-text/api'
+  };
+  authorization.getToken(params, function (err, token) {
+    if (!token) {
+      debug('token err', err);
+      req.token = '';
+      next();
+    } else {
+      debug('watson token', token);
+      req.token = token;
+      next();
+    }
+  });
+}
+
 app.get("/health", (req, res) => {
   debug("healthcheck");
   res.status(200).send({success: "frontend template is up"});
+});
+app.get('/getToken', getToken, (req, res) => {
+  debug("getToken");
+  res.status(200).send({token: req.token});
 });
 
 debug('NODE_ENV', app.get('env'));
@@ -62,28 +90,6 @@ if (app.get('env') == 'development') {
 } else {
   app.use("/", express.static(path.join(__dirname, '../build')));
 }
-
-var authorization = watson.authorization({
-  username: process.env.USERNAME,
-  password: process.env.PASSWORD,
-  version: 'v1',
-  url: 'https://stream.watsonplatform.net/authorization/api'
-});
-
-app.get('/getToken', function(req, res) {
-  var params = {
-    url: 'https://stream.watsonplatform.net/speech-to-text/api'
-  };
-  
-  authorization.getToken(params, function (err, token) {
-    if (!token) {
-      res.send({'error':err});
-    } else {
-      res.send(token);
-    }
-  });
-});
-
 
 app.get( '*', ignore, (req, res) => {
   // Note that req.url here should be the full URL path from
